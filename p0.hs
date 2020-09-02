@@ -7,6 +7,9 @@ import Text.ParserCombinators.Parsec.Language
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Token
 
+--for quickcheck
+import Test.QuickCheck
+
 --
 -- Simple caculator over naturals with no identifiers
 --
@@ -78,6 +81,15 @@ term = parens lexer expr
        <|> numExpr
        <|> ifExpr
 
+--print
+pprint :: AE -> String
+pprint (Num n ) = show n
+pprint (Plus n m) = "(" ++ pprint n ++ " + " ++ pprint m ++ ")"
+pprint (Minus n m) = "(" ++ pprint n ++ " - " ++ pprint m ++ ")"
+pprint (Mult n m) = "(" ++ pprint n ++ " * " ++ pprint m ++ ")"
+pprint (Div n m) = "(" ++ pprint n ++ " / " ++ pprint m ++ ")"
+pprint (If0 c t e) = "(if0 " ++ pprint c ++ " then " ++ pprint t ++ " else " ++ pprint e ++ ")"
+
 -- Parser invocation
 -- Call parseAE to parse a string into the AE data structure.
 
@@ -141,3 +153,54 @@ evalM (If0 c t e) = do
 
 interpAE :: String -> Maybe Int
 interpAE x = evalM (parseAE x)
+
+--Testing stuff
+instance Arbitrary AE where
+  arbitrary = sized $ \n -> genAE (rem n 10)
+
+genNum = do
+          t <- choose (0,100)
+          return (Num t)
+
+genPlus n = do
+              s <- genAE n
+              t <- genAE n
+              return (Plus s t)
+
+genMinus n = do
+              s <- genAE n
+              t <- genAE n
+              return (Minus s t)
+
+genMult n = do
+              s <- genAE n
+              t <- genAE n
+              return (Mult s t)
+
+genDiv n = do
+              s <- genAE n
+              t <- genAE n
+              return (Div s t)
+
+genIf0 n = do
+              s <- genAE n
+              t <- genAE n
+              u <- genAE n
+              return (If0 s t u)
+
+genAE :: Int -> Gen AE
+genAE 0 = do 
+            term <- genNum
+            return term
+genAE n = do
+            term <- oneof [genNum, (genPlus (n-1)), (genMinus (n-1)), (genMult (n-1)), (genDiv (n-1)), (genIf0 (n-1))]
+            return term
+
+testParser :: Int -> IO()
+testParser n = quickCheckWith stdArgs {maxSuccess = n}
+              (\t -> parseAE (pprint t) == t)
+
+--It will stop a few runs because of bad input, have no idea how to avoid bad input
+testEvalAE :: Int -> IO()
+testEvalAE n = quickCheckWith stdArgs {maxSuccess = n}
+              (\t -> (interpAE (pprint t)) == (evalAEMaybe t))
