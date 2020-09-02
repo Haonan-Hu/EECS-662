@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs, FlexibleContexts #-}
 
 -- Imports for Parsec
-import Control.Monad
+import Control.Monad()
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
 import Text.ParserCombinators.Parsec.Expr
@@ -90,10 +90,26 @@ parseAE = parseString expr
 -- Exercise 4 requires you to integrate the parser above.
 
 evalAE :: AE -> Int
-evalAE _ = 0
+evalAE (Num n) = let r = n in
+                    if (r < 0) then error "*" else r
+evalAE (Plus l r) = (evalAE l) + (evalAE r) 
+evalAE (Minus l r) = let r' = (evalAE l) - (evalAE r) in
+                      if(r' < 0) then error "!" else r'
+evalAE (Mult l r) = (evalAE l) * (evalAE r)
+evalAE (Div l r) = let r' = (evalAE r) in
+                    if(r' == 0) then error "!!" else (evalAE l) `div` r'
+evalAE (If0 c t e) = if((evalAE c) == 0) then (evalAE t) else (evalAE e)
 
 evalAEMaybe :: AE -> Maybe Int
-evalAEMaybe _ = Nothing
+evalAEMaybe (Num n) = let r = n in
+                        if (r < 0) then Nothing else Just r
+evalAEMaybe (Plus l r) = Just (evalAE (Plus l r))
+evalAEMaybe (Minus l r) = let x = evalAE (Minus l r) in
+                            if x < 0 then Nothing else Just x
+evalAEMaybe (Mult l r) = Just (evalAE (Mult l r))
+evalAEMaybe (Div l r) = let r' = (evalAE r) in
+                          if(r' == 0) then Nothing else Just (evalAE (Div l r))
+evalAEMaybe (If0 c t e) = if((evalAE c) == 0) then Just (evalAE t) else Just (evalAE e)
 
 evalM :: AE -> Maybe Int
 evalM _ = Nothing
