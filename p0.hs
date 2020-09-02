@@ -112,7 +112,32 @@ evalAEMaybe (Div l r) = let r' = (evalAE r) in
 evalAEMaybe (If0 c t e) = if((evalAE c) == 0) then Just (evalAE t) else Just (evalAE e)
 
 evalM :: AE -> Maybe Int
-evalM _ = Nothing
+evalM (Num n) = do 
+                 x <- if (n < 0) then Nothing else Just n
+                 return x
+evalM (Plus l r) = do
+                    x <- (evalAEMaybe l)
+                    y <- (evalAEMaybe r)
+                    z <-  Just (x + y)
+                    return z
+evalM (Minus l r) = do
+                    x <- (evalAEMaybe l)
+                    y <- (evalAEMaybe r)
+                    z <- if (x - y) < 0 then Nothing else Just (x - y)
+                    return (z)
+evalM (Mult l r) = do
+                    x <- (evalAEMaybe l)
+                    y <- (evalAEMaybe r)
+                    z <-  Just (x * y)
+                    return z
+evalM (Div l r) = do
+                    x <- (evalAEMaybe l)
+                    y <- (evalAEMaybe r)
+                    z <- if y == 0 then Nothing else Just (x `div` y)
+                    return (z)
+evalM (If0 c t e) = do
+                    x <- if((evalAE c) == 0) then (evalAEMaybe t) else (evalAEMaybe e)
+                    return x
 
 interpAE :: String -> Maybe Int
-interpAE _ = Nothing
+interpAE x = evalM (parseAE x)
