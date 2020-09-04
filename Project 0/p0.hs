@@ -158,30 +158,36 @@ interpAE x = evalM (parseAE x)
 instance Arbitrary AE where
   arbitrary = sized $ \n -> genAE (rem n 10)
 
+genNum :: Gen AE
 genNum = do
           t <- choose (0,100)
           return (Num t)
 
+genPlus :: Int -> Gen AE
 genPlus n = do
               s <- genAE n
               t <- genAE n
               return (Plus s t)
 
+genMinus :: Int -> Gen AE
 genMinus n = do
               s <- genAE n
               t <- genAE n
               return (Minus s t)
 
+genMult :: Int -> Gen AE
 genMult n = do
               s <- genAE n
               t <- genAE n
               return (Mult s t)
 
+genDiv :: Int -> Gen AE
 genDiv n = do
               s <- genAE n
               t <- genAE n
               return (Div s t)
 
+genIf0 :: Int -> Gen AE
 genIf0 n = do
               s <- genAE n
               t <- genAE n
