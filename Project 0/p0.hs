@@ -102,8 +102,7 @@ parseAE = parseString expr
 -- Exercise 4 requires you to integrate the parser above.
 
 evalAE :: AE -> Int
-evalAE (Num n) = let r = n in
-                    if (r < 0) then error "*" else r
+evalAE (Num n) = n
 evalAE (Plus l r) = (evalAE l) + (evalAE r) 
 evalAE (Minus l r) = let r' = (evalAE l) - (evalAE r) in
                       if(r' < 0) then error "!" else r'
@@ -113,43 +112,53 @@ evalAE (Div l r) = let r' = (evalAE r) in
 evalAE (If0 c t e) = if((evalAE c) == 0) then (evalAE t) else (evalAE e)
 
 evalAEMaybe :: AE -> Maybe Int
-evalAEMaybe (Num n) = let r = n in
-                        if (r < 0) then Nothing else Just r
-evalAEMaybe (Plus l r) = Just (evalAE (Plus l r))
-evalAEMaybe (Minus l r) = let x = evalAE (Minus l r) in
-                            if x < 0 then Nothing else Just x
-evalAEMaybe (Mult l r) = Just (evalAE (Mult l r))
-evalAEMaybe (Div l r) = let r' = (evalAE r) in
-                          if(r' == 0) then Nothing else Just (evalAE (Div l r))
-evalAEMaybe (If0 c t e) = if((evalAE c) == 0) then Just (evalAE t) else Just (evalAE e)
+evalAEMaybe (Num n) = Just n
+evalAEMaybe (Plus l r) = case (evalAEMaybe l) of
+                            Nothing -> Nothing
+                            Just l' -> case (evalAEMaybe r) of
+                                          Nothing -> Nothing
+                                          Just r' -> Just (l' + r')
+evalAEMaybe (Minus l r) = case (evalAEMaybe l) of
+                            Nothing -> Nothing
+                            Just l' -> case (evalAEMaybe r) of
+                                          Nothing -> Nothing
+                                          Just r' -> if r' <= l' then Just (l' - r') else Nothing
+evalAEMaybe (Mult l r) = case (evalAEMaybe l) of
+                            Nothing -> Nothing
+                            Just l' -> case (evalAEMaybe r) of
+                                          Nothing -> Nothing
+                                          Just r' -> Just (l' * r')
+evalAEMaybe (Div l r) = case (evalAEMaybe l) of
+                            Nothing -> Nothing
+                            Just l' -> case (evalAEMaybe r) of
+                                          Nothing -> Nothing
+                                          Just r' -> if r' /= 0 then Just (l' `div` r') else Nothing
+evalAEMaybe (If0 c t e) = if((evalAEMaybe c) == evalAEMaybe (Num 0)) then (evalAEMaybe t) else (evalAEMaybe e)
 
 evalM :: AE -> Maybe Int
 evalM (Num n) = do 
-                 x <- if (n < 0) then Nothing else Just n
-                 return x
+                x <- Just n;
+                return x
 evalM (Plus l r) = do
-                    x <- (evalAEMaybe l)
-                    y <- (evalAEMaybe r)
-                    z <-  Just (x + y)
-                    return z
+                   l' <- evalM l;
+                   r' <- evalM r;
+                   return (l' + r')
 evalM (Minus l r) = do
-                    x <- (evalAEMaybe l)
-                    y <- (evalAEMaybe r)
-                    z <- if (x - y) < 0 then Nothing else Just (x - y)
-                    return (z)
+                    l' <- evalM l;
+                    r' <- evalM r;
+                    if(r' <= l') then return (l' - r') else Nothing
 evalM (Mult l r) = do
-                    x <- (evalAEMaybe l)
-                    y <- (evalAEMaybe r)
-                    z <-  Just (x * y)
-                    return z
+                   l' <- evalM l;
+                   r' <- evalM r;
+                   return (l' * r')
 evalM (Div l r) = do
-                    x <- (evalAEMaybe l)
-                    y <- (evalAEMaybe r)
-                    z <- if y == 0 then Nothing else Just (x `div` y)
-                    return (z)
+                  l' <- evalM l;
+                  r' <- evalM r;
+                  if(r' /= 0) then return (l' `div` r') else Nothing  
 evalM (If0 c t e) = do
-                    x <- if((evalAE c) == 0) then (evalAEMaybe t) else (evalAEMaybe e)
+                    x <- if((evalM c) == evalM (Num 0)) then (evalM t) else (evalM e)
                     return x
+                    
 
 interpAE :: String -> Maybe Int
 interpAE x = evalM (parseAE x)
@@ -207,6 +216,16 @@ testParser n = quickCheckWith stdArgs {maxSuccess = n}
               (\t -> parseAE (pprint t) == t)
 
 --It will stop a few runs because of bad input, have no idea how to avoid bad input
+--Assuming its because the error message is not matching, we made error message whatevet we want
+--But for EvalAEMaybe and EvalM error is simply Nothing
 testEvalAE :: Int -> IO()
 testEvalAE n = quickCheckWith stdArgs {maxSuccess = n}
+              (\t -> (interpAE (pprint t)) ==  Just(evalAE t))
+
+testEvalAEMaybe :: Int -> IO()
+testEvalAEMaybe n = quickCheckWith stdArgs {maxSuccess = n}
               (\t -> (interpAE (pprint t)) == (evalAEMaybe t))
+
+testEvalM :: Int -> IO()
+testEvalM n = quickCheckWith stdArgs {maxSuccess = n}
+              (\t -> (interpAE (pprint t)) == (evalM t))
