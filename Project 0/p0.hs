@@ -1,3 +1,6 @@
+--Haonan Hu
+--2863545
+--13 Sep, 2020
 {-# LANGUAGE GADTs, FlexibleContexts #-}
 
 -- Imports for Parsec
@@ -7,7 +10,9 @@ import Text.ParserCombinators.Parsec.Language
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Token
 
---for quickcheck
+--for quickcheck, so Dr.Alexander, you might need to install quickcheck package from cabal
+--but you 99.99% chance already have it, just a quick reminder, just in case code cant compile
+--because of it
 import Test.QuickCheck
 
 --
@@ -41,7 +46,7 @@ languageDef =
                               ]
             , reservedOpNames = [ "+","-","*","/"]
             }
-  
+
 lexer = makeTokenParser languageDef
 
 inFix o c a = (Infix (reservedOp lexer o >> return c) a)
@@ -62,7 +67,7 @@ operators = [
   , [ inFix "+" Plus AssocLeft
   , inFix "-" Minus AssocLeft ]
   ]
-  
+
 numExpr :: Parser AE
 numExpr = do i <- integer lexer
              return (Num (fromInteger i))
@@ -75,7 +80,7 @@ ifExpr  = do reserved lexer "if0"
              reserved lexer "else"
              e <- expr
              return (If0 c t e)
-                     
+
 
 term = parens lexer expr
        <|> numExpr
@@ -103,7 +108,7 @@ parseAE = parseString expr
 
 evalAE :: AE -> Int
 evalAE (Num n) = n
-evalAE (Plus l r) = (evalAE l) + (evalAE r) 
+evalAE (Plus l r) = (evalAE l) + (evalAE r)
 evalAE (Minus l r) = let r' = (evalAE l) - (evalAE r) in
                       if(r' < 0) then error "!" else r'
 evalAE (Mult l r) = (evalAE l) * (evalAE r)
@@ -136,7 +141,7 @@ evalAEMaybe (Div l r) = case (evalAEMaybe l) of
 evalAEMaybe (If0 c t e) = if((evalAEMaybe c) == evalAEMaybe (Num 0)) then (evalAEMaybe t) else (evalAEMaybe e)
 
 evalM :: AE -> Maybe Int
-evalM (Num n) = do 
+evalM (Num n) = do
                 x <- Just n;
                 return x
 evalM (Plus l r) = do
@@ -154,11 +159,11 @@ evalM (Mult l r) = do
 evalM (Div l r) = do
                   l' <- evalM l;
                   r' <- evalM r;
-                  if(r' /= 0) then return (l' `div` r') else Nothing  
+                  if(r' /= 0) then return (l' `div` r') else Nothing
 evalM (If0 c t e) = do
                     x <- if((evalM c) == evalM (Num 0)) then (evalM t) else (evalM e)
                     return x
-                    
+
 
 interpAE :: String -> Maybe Int
 interpAE x = evalM (parseAE x)
@@ -204,7 +209,7 @@ genIf0 n = do
               return (If0 s t u)
 
 genAE :: Int -> Gen AE
-genAE 0 = do 
+genAE 0 = do
             term <- genNum
             return term
 genAE n = do
@@ -217,7 +222,7 @@ testParser n = quickCheckWith stdArgs {maxSuccess = n}
 
 --It will stop a few runs because of bad input, have no idea how to avoid bad input
 --Assuming its because the error message is not matching, we made error message whatevet we want
---But for EvalAEMaybe and EvalM error is simply Nothing
+--But for EvalAEMaybe and EvalM error is simply Nothing and Nothing doesn't stop program and wont cause error to crash from my observation
 testEvalAE :: Int -> IO()
 testEvalAE n = quickCheckWith stdArgs {maxSuccess = n}
               (\t -> (interpAE (pprint t)) ==  Just(evalAE t))
