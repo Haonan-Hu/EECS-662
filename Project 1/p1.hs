@@ -34,7 +34,11 @@ subst x v (Plus l r) = (Plus (subst x v l) (subst x v r))
 subst x v (Minus l r) = (Minus (subst x v l) (subst x v r))
 subst x v (Bind x' v' b') = if (x == x') then (Bind x' (subst x v v') b') else (Bind x' (subst x v v') (subst x v b'))
 subst x v (Id x') = if (x == x') then v else (Id x')
-
+subst x v (Boolean b) = (Boolean b)
+subst x v (And l r) = (And (subst x v l) (subst x v r))
+subst x v (Leq l r) = (Leq (subst x v l) (subst x v r))
+subst x v (IsZero n) = (IsZero (subst x v n))
+subst x v (If c t e) = (If (subst x v c) (subst x v t) (subst x v e))
 
 
 evalS :: BBAE -> (Maybe BBAE)
