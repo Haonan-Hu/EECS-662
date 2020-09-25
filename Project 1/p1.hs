@@ -104,7 +104,7 @@ evalM e' (If c t e) = do
                      if c' then (evalM e' t) else (evalM e' e)
 
 testBBAE :: BBAE -> Bool
-testBBAE _ = True
+testBBAE x = if((evalS x) == (evalM [] x)) then True else False
 
 typeofM :: Cont -> BBAE -> (Maybe TBBAE)
 typeofM _ _ = Nothing
