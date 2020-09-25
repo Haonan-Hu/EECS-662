@@ -64,13 +64,44 @@ evalS (Leq l r) = do
                     (Num l') <- evalS l;
                     (Num r') <- evalS r;
                     if(l' <= r') then return (Boolean True) else return (Boolean False)
-evalS (IsZero n) = if (n == (Num 0)) then return (Boolean True) else return (Boolean False)
+evalS (IsZero n) = do
+                     (Num n') <- evalS n
+                     if (n' == 0) then return (Boolean True) else return (Boolean False)
 evalS (If c t e) = do
                      (Boolean c') <- evalS c;
                      if c' then (evalS t) else (evalS e)
 
 evalM :: Env -> BBAE -> (Maybe BBAE)
-evalM _ _ = Nothing
+evalM _ (Num n) = Just (Num n)
+evalM e (Plus l r) = do
+                     (Num l') <- evalM e l;
+                     (Num r') <- evalM e r;
+                     return (Num (l' + r'))
+evalM e (Minus l r) = do
+                      (Num l') <- evalM e l;
+                      (Num r') <- evalM e r;
+                      if(l' >= r') then return (Num (l' - r')) else Nothing
+evalM e (Bind x a b) = do
+                       a' <- evalM e a;
+                       evalM ((x, a'):e) b
+evalM e (Id x) = do
+                 v <- lookup x e;
+                 return v
+evalM _ (Boolean b) = Just (Boolean b)
+evalM e (And l r) = do
+                    (Boolean l') <- evalM e l;
+                    (Boolean r') <- evalM e r;
+                    return (Boolean (l' && r'))
+evalM e (Leq l r) = do
+                    (Num l') <- evalM e l;
+                    (Num r') <- evalM e r;
+                    if(l' <= r') then return (Boolean True) else return (Boolean False)
+evalM e (IsZero n) = do
+                     (Num n') <- evalM e n
+                     if (n' == 0) then return (Boolean True) else return (Boolean False)
+evalM e' (If c t e) = do
+                     (Boolean c') <- evalM e' c;
+                     if c' then (evalM e' t) else (evalM e' e)
 
 testBBAE :: BBAE -> Bool
 testBBAE _ = True
