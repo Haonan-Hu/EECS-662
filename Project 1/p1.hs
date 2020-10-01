@@ -139,6 +139,9 @@ typeofM c (If c' t e) = do
                          t' <- typeofM c t;
                          e' <- typeofM c e;
                          if t' == e' then return t' else Nothing
-                         
+
 evalT :: BBAE -> (Maybe BBAE)
-evalT _ = Nothing
+evalT exp = do
+              typeofM [] exp;
+              evalM [] exp;
+
