@@ -107,7 +107,38 @@ testBBAE :: BBAE -> Bool
 testBBAE x = if((evalS x) == (evalM [] x)) then True else False
 
 typeofM :: Cont -> BBAE -> (Maybe TBBAE)
-typeofM _ _ = Nothing
-
+typeofM _ (Num _) = return TNum
+typeofM _ (Boolean _) = return TBool
+typeofM c (Plus l r) = do
+                        TNum <- typeofM c l;
+                        TNum <- typeofM c r;
+                        return TNum
+typeofM c (Minus l r) = do
+                         TNum <- typeofM c l;
+                         TNum <- typeofM c r;
+                         return TNum
+typeofM c (Bind x a b) = do
+                          a' <- typeofM c a;
+                          typeofM ((x,a'):c) b
+typeofM c (Id x) = do
+                    x' <- lookup x c;
+                    return x'
+typeofM c (And l r) = do
+                       TBool <- typeofM c l;
+                       TBool <- typeofM c r;
+                       return TBool
+typeofM c (Leq l r) = do
+                       TNum <- typeofM c l;
+                       TNum <- typeofM c l;
+                       return TBool
+typeofM c (IsZero n) = do
+                        TNum <- typeofM c n;
+                        return TBool
+typeofM c (If c' t e) = do
+                         TBool <- typeofM c c';
+                         t' <- typeofM c t;
+                         e' <- typeofM c e;
+                         if t' == e' then return t' else Nothing
+                         
 evalT :: BBAE -> (Maybe BBAE)
 evalT _ = Nothing
