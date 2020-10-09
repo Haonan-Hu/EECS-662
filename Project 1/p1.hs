@@ -1,3 +1,7 @@
+--Name: Haonan Hu
+--ID: 2863545
+--Date: Oct 7, 2020
+
 {-# LANGUAGE GADTs,FlexibleContexts #-}
 
 -- Imports for Monads
@@ -145,3 +149,31 @@ evalT exp = do
               typeofM [] exp;
               evalM [] exp;
 
+main = do{
+    -- test for evalS
+    print (evalS (Bind "x" (Boolean False)  (And (Id "x") (Boolean True))));
+    print (evalS (Bind "x" (Num 1)  (Leq (Id "x") (Num 5))));
+    print (evalS (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (evalS (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (evalS (Bind "x" (Num 1) (If (Boolean True) (Plus (Num 1) (Id "x")) (Id "x") )));
+    print (evalS (Bind "x" (Boolean True) (If ((Id "x")) (Num 1) (Num 2))));
+    print (evalS (Bind "x" (Boolean True) (If (Id "x") (Num 1) (Num 2) )));
+
+    -- test for evalM
+    print (evalM [] (Bind "x" (Boolean False)  (And (Id "x") (Boolean True))));
+    print (evalM [] (Bind "x" (Num 1)  (Leq (Id "x") (Num 5))));
+    print (evalM [] (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (evalM [] (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (evalM [] (Bind "x" (Num 1) (If (Boolean True) (Plus (Num 1) (Id "x")) (Id "x") )));
+    print (evalM [] (Bind "x" (Boolean True) (If ((Id "x")) (Num 1) (Num 2))));
+    print (evalM [] (Bind "x" (Boolean True) (If (Id "x") (Num 1) (Num 2) )));
+
+    -- test for testBBAE
+    print (testBBAE (Bind "x" (Boolean False)  (And (Id "x") (Boolean True))));
+    print (testBBAE (Bind "x" (Num 1)  (Leq (Id "x") (Num 5))));
+    print (testBBAE (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (testBBAE (Bind "x" (Num 1)  (IsZero (Id "x"))));
+    print (testBBAE (Bind "x" (Num 1) (If (Boolean True) (Plus (Num 1) (Id "x")) (Id "x") )));
+    print (testBBAE (Bind "x" (Boolean True) (If ((Id "x")) (Num 1) (Num 2))));
+    print (testBBAE (Bind "x" (Boolean True) (If (Id "x") (Num 1) (Num 2) )));
+}
