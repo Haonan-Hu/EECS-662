@@ -84,7 +84,7 @@ elabFBAE (IdD s) = Id s
 
 
 evalFBAE :: Env' -> FBAE -> (Maybe FAEValue)
-evalFBAE _ _ = Nothing
+evalFBAE e t = evalStatFAE e (elabFBAE t)
 
 -- FBAEC AST and Type Definitions
 
