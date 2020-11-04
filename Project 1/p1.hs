@@ -6,7 +6,7 @@
 
 -- Imports for Monads
 
-import Control.Monad
+import Control.Monad()
 
 -- BBAE AST and Type Definitions
 

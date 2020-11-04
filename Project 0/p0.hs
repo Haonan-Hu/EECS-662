@@ -13,7 +13,7 @@ import Text.ParserCombinators.Parsec.Token
 --for quickcheck, so Dr.Alexander, you might need to install quickcheck package from cabal
 --but you 99.99% chance already have it, just a quick reminder, just in case code cant compile
 --because of it
-import Test.QuickCheck
+import Test.QuickCheck()
 
 --
 -- Simple caculator over naturals with no identifiers
