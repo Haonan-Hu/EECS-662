@@ -18,7 +18,7 @@ data FAE where
 type Env = [(String,FAE)]
 
 evalDynFAE :: Env -> FAE -> (Maybe FAE)
-evalDynFAE _ (Num n) = Just(Num n)
+evalDynFAE _ (Num n) = return (Num n)
 evalDynFAE e (Plus l r) = do
                             (Num l') <- evalDynFAE e l;
                             (Num r') <- evalDynFAE e r;
@@ -27,11 +27,11 @@ evalDynFAE e (Minus l r) = do
                              (Num l') <- evalDynFAE e l;
                              (Num r') <- evalDynFAE e r;
                              if(r' < l') then return (Num (l' - r')) else Nothing
-evalDynFAE _ (Lambda i b) = Just (Lambda i b)
+evalDynFAE _ (Lambda i b) = return (Lambda i b)
 evalDynFAE e (App f a) = do
                             a' <- evalDynFAE e a;
                             (Lambda i s) <- (evalDynFAE e f);
-                            evalDynFAE ((i,a'):e) s
+                            (evalDynFAE ((i,a'):e) s)
 evalDynFAE e (Id s) = lookup s e
 
 
@@ -43,7 +43,21 @@ data FAEValue where
 type Env' = [(String,FAEValue)]
 
 evalStatFAE :: Env' -> FAE -> (Maybe FAEValue)
-evalStatFAE _ _ = Nothing
+evalStatFAE _ (Num n) = return (NumV n)
+evalStatFAE e (Plus l r) = do
+                              (NumV l') <- evalStatFAE e l;
+                              (NumV r') <- evalStatFAE e r;
+                              return (NumV (l' + r'))                           
+evalStatFAE e (Minus l r) = do
+                              (NumV l') <- evalStatFAE e l;
+                              (NumV r') <- evalStatFAE e r;
+                              if(r' < l') then return (NumV (l' - r')) else Nothing                          
+evalStatFAE e (Lambda i b) = return (ClosureV i b e)
+evalStatFAE e (App f a) = do
+                            a' <- evalStatFAE e a;
+                            (ClosureV i b e') <- evalStatFAE e f;
+                            (evalStatFAE ((i,a'):e') b)                           
+evalStatFAE e (Id s) = lookup s e
 
 
 -- FBAE AST and Type Definitions
