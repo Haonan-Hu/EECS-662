@@ -18,7 +18,21 @@ data FAE where
 type Env = [(String,FAE)]
 
 evalDynFAE :: Env -> FAE -> (Maybe FAE)
-evalDynFAE _ _ = Nothing
+evalDynFAE _ (Num n) = Just(Num n)
+evalDynFAE e (Plus l r) = do
+                            (Num l') <- evalDynFAE e l;
+                            (Num r') <- evalDynFAE e r;
+                            return (Num (l' + r'))
+evalDynFAE e (Minus l r) = do
+                             (Num l') <- evalDynFAE e l;
+                             (Num r') <- evalDynFAE e r;
+                             if(r' < l') then return (Num (l' - r')) else Nothing
+evalDynFAE _ (Lambda i b) = Just (Lambda i b)
+evalDynFAE e (App f a) = do
+                            a' <- evalDynFAE e a;
+                            (Lambda i s) <- (evalDynFAE e f);
+                            evalDynFAE ((i,a'):e) s
+evalDynFAE e (Id s) = lookup s e
 
 
 data FAEValue where
@@ -73,3 +87,5 @@ elabFBAEC _ = (Num (-1))
 
 evalFBAEC :: Env' -> FBAEC -> Maybe FAEValue
 evalFBAEC _ _ = Nothing
+
+
