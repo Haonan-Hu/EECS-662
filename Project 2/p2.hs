@@ -73,7 +73,15 @@ data FBAE where
   deriving (Show,Eq)
 
 elabFBAE :: FBAE -> FAE
-elabFBAE _ = (Num (-1))
+elabFBAE (NumD n) = (Num n)
+elabFBAE (PlusD l r) = Plus (elabFBAE l) (elabFBAE r)
+elabFBAE (MinusD l r) = Minus (elabFBAE l) (elabFBAE r)
+elabFBAE (LambdaD i b) = Lambda i (elabFBAE b)
+elabFBAE (AppD f a) = App (elabFBAE f) (elabFBAE a)
+elabFBAE (BindD i a b) = (App (Lambda i (elabFBAE b)) (elabFBAE a))
+elabFBAE (IdD s) = Id s
+
+
 
 evalFBAE :: Env' -> FBAE -> (Maybe FAEValue)
 evalFBAE _ _ = Nothing
