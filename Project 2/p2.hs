@@ -105,9 +105,21 @@ data FBAEC where
   deriving (Show,Eq)
 
 elabFBAEC :: FBAEC -> FAE
-elabFBAEC _ = (Num (-1))
+elabFBAEC (NumE n) = Num n
+elabFBAEC (PlusE l r) = Plus (elabFBAEC l) (elabFBAEC r)
+elabFBAEC (MinusE l r) = Minus (elabFBAEC l) (elabFBAEC r)
+elabFBAEC (TrueE) = Lambda "t" (Lambda "f" (Id "t"))
+elabFBAEC (FalseE) = Lambda "t" (Lambda "f" (Id "f"))
+elabFBAEC (AndE l r) = App (App (elabFBAEC l) (elabFBAEC r)) (elabFBAEC FalseE)
+elabFBAEC (OrE l r) = App (App (elabFBAEC l) (elabFBAEC TrueE)) (elabFBAEC r)
+elabFBAEC (NotE b) = App (App (elabFBAEC b) (elabFBAEC FalseE)) (elabFBAEC TrueE)
+elabFBAEC (IfE c t e) = if((elabFBAEC c) == (elabFBAEC TrueE)) then (elabFBAEC t) else (elabFBAEC e)
+elabFBAEC (LambdaE i b) = Lambda i (elabFBAEC b)
+elabFBAEC (AppE f a) = App (elabFBAEC f) ( elabFBAEC a)
+elabFBAEC (BindE i a b) = App (Lambda i (elabFBAEC b)) (elabFBAEC a)
+elabFBAEC (IdE s) = Id s
 
 evalFBAEC :: Env' -> FBAEC -> Maybe FAEValue
-evalFBAEC _ _ = Nothing
+evalFBAEC e t = evalStatFAE e (elabFBAEC t)
 
 
