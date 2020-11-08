@@ -122,4 +122,74 @@ elabFBAEC (IdE s) = Id s
 evalFBAEC :: Env' -> FBAEC -> Maybe FAEValue
 evalFBAEC e t = evalStatFAE e (elabFBAEC t)
 
+-- test cases
+main :: IO ()
+main = do
+    print (evalDynFAE [] (Num 1));
+    print (evalDynFAE [] (Plus (Num 2) (Num 5)));
+    print (evalDynFAE [] (Minus (Num 2) (Num 5)));
+    print (evalDynFAE [] (Minus (Num 8) (Num 5)));
+    print (evalDynFAE [] (Lambda "Hello" (Num 2)));
+    print (evalDynFAE [] (Lambda "Hello" (Plus (Num 2) (Num 11))));
+    print (evalDynFAE [] (App (Lambda "Hello" (Plus (Num 2) (Num 11))) (Num 2)));
+    print (evalDynFAE [] (App (Lambda "Hello" (Plus (Num 2) (Id "Hello"))) (Num 2)));
+    print (evalDynFAE [] (App (Lambda "Hello" (Plus (Id "Hello") (Id "Hello"))) (Num 8)));
+    print (evalDynFAE [] (App (Lambda "Hello" (Plus (Id "Hello") (Id "Hello"))) (Plus (Num 2) (App (Lambda "a" (Id "a")) (Num 2)))));
+    print (evalDynFAE [("g", (Num 2))] (Id "g"));
 
+    print (evalStatFAE [] (Num 1));
+    print (evalStatFAE [] (Plus (Num 2) (Num 5)));
+    print (evalStatFAE [] (Minus (Num 2) (Num 5)));
+    print (evalStatFAE [] (Minus (Num 8) (Num 5)));
+    print (evalStatFAE [] (Lambda "Hello" (Num 2)));
+    print (evalStatFAE [] (Lambda "Hello" (Plus (Num 2) (Num 11))));
+    print (evalStatFAE [] (App (Lambda "Hello" (Plus (Num 2) (Num 11))) (Num 2)));
+    print (evalStatFAE [] (App (Lambda "Hello" (Plus (Num 2) (Id "Hello"))) (Num 2)));
+    print (evalStatFAE [] (App (Lambda "Hello" (Plus (Id "Hello") (Id "Hello"))) (Num 8)));
+    print (evalStatFAE [] (App (Lambda "Hello" (Plus (Id "Hello") (Id "Hello"))) (Plus (Num 2) (App (Lambda "a" (Id "a")) (Num 2)))));
+    print (evalStatFAE [("g", (NumV 2))] (Id "g"));
+
+    print (elabFBAE (NumD 1));
+    print (elabFBAE (PlusD (NumD 2) (NumD 5)));
+    print (elabFBAE (MinusD (NumD 2) (NumD 5)));
+    print (elabFBAE (MinusD (NumD 8) (NumD 5)));
+    print (elabFBAE (LambdaD "Hello" (NumD 2)));
+    print (elabFBAE (AppD (LambdaD "Hello" (IdD "Hello")) (NumD 2)));
+    print (elabFBAE (IdD "g"));
+    print (elabFBAE (BindD "Hello" (NumD 2) (NumD 3)));
+
+    print (evalFBAE [] (NumD 1));
+    print (evalFBAE [] (PlusD (NumD 2) (NumD 5)));
+    print (evalFBAE [] (MinusD (NumD 2) (NumD 5)));
+    print (evalFBAE [] (MinusD (NumD 8) (NumD 5)));
+    print (evalFBAE [] (LambdaD "Hello" (NumD 2)));
+    print (evalFBAE [] (LambdaD "Hello" (PlusD (NumD 2) (NumD 11))));
+    print (evalFBAE [] (AppD (LambdaD "Hello" (PlusD (NumD 2) (NumD 11))) (NumD 2)));
+    print (evalFBAE [] (AppD (LambdaD "Hello" (PlusD (NumD 2) (IdD "Hello"))) (NumD 2)));
+    print (evalFBAE [] (AppD (LambdaD "Hello" (PlusD (IdD "Hello") (IdD "Hello"))) (NumD 8)));
+    print (evalFBAE [] (AppD (LambdaD "Hello" (PlusD (IdD "Hello") (IdD "Hello"))) (PlusD (NumD 2) (AppD (LambdaD "a" (IdD "a")) (NumD 2)))));
+    print (evalFBAE [("g", (NumV 2))] (IdD "g"));
+    print (evalFBAE [] (BindD "Hello" (NumD 2) (NumD 3)));
+
+    print (evalFBAEC [] (NumE 1));
+    print (evalFBAEC [] (PlusE (NumE 2) (NumE 5)));
+    print (evalFBAEC [] (MinusE (NumE 2) (NumE 5)));
+    print (evalFBAEC [] (MinusE (NumE 8) (NumE 5)));
+    print (evalFBAEC [] (TrueE));
+    print (evalFBAEC [] (FalseE));
+    print (evalFBAEC [] (AndE (TrueE) (FalseE)));
+    print (evalFBAEC [] (AndE (TrueE) (TrueE)));
+    print (evalFBAEC [] (OrE (FalseE) (FalseE)));
+    print (evalFBAEC [] (OrE (TrueE) (FalseE)));
+    print (evalFBAEC [] (NotE (FalseE)));
+    print (evalFBAEC [] (NotE (TrueE)));
+    print (evalFBAEC [] (IfE (FalseE) (FalseE) (NumE 233)));
+    print (evalFBAEC [] (IfE (TrueE) (FalseE) (NumE 233)));
+    print (evalFBAEC [] (LambdaE "Hello" (NumE 2)));
+    print (evalFBAEC [] (LambdaE "Hello" (PlusE (NumE 2) (NumE 11))));
+    print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (NumE 2) (NumE 11))) (NumE 2)));
+    print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (NumE 2) (IdE "Hello"))) (NumE 2)));
+    print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (IdE "Hello") (IdE "Hello"))) (NumE 8)));
+    print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (IdE "Hello") (IdE "Hello"))) (PlusE (NumE 2) (AppE (LambdaE "a" (IdE "a")) (NumE 2)))));
+    print (evalFBAEC [("g", (NumV 2))] (IdE "g"));
+    print (evalFBAEC [] (BindE "Hello" (NumE 2) (NumE 3)))
