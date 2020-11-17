@@ -113,7 +113,7 @@ elabFBAEC (FalseE) = Lambda "t" (Lambda "f" (Id "f"))
 elabFBAEC (AndE l r) = App (App (elabFBAEC l) (elabFBAEC r)) (elabFBAEC FalseE)
 elabFBAEC (OrE l r) = App (App (elabFBAEC l) (elabFBAEC TrueE)) (elabFBAEC r)
 elabFBAEC (NotE b) = App (App (elabFBAEC b) (elabFBAEC FalseE)) (elabFBAEC TrueE)
-elabFBAEC (IfE c t e) = if((elabFBAEC c) == (elabFBAEC TrueE)) then (elabFBAEC t) else (elabFBAEC e)
+elabFBAEC (IfE c t e) = App (App (elabFBAEC c) (elabFBAEC t)) (elabFBAEC e)
 elabFBAEC (LambdaE i b) = Lambda i (elabFBAEC b)
 elabFBAEC (AppE f a) = App (elabFBAEC f) ( elabFBAEC a)
 elabFBAEC (BindE i a b) = App (Lambda i (elabFBAEC b)) (elabFBAEC a)
@@ -123,6 +123,43 @@ evalFBAEC :: Env' -> FBAEC -> Maybe FAEValue
 evalFBAEC e t = evalStatFAE e (elabFBAEC t)
 
 -- test cases
+-- Tests for evalDynFAE and evalStatFAE.  test2 should demonstrate
+-- the difference between static and dynamic scoping.  If you get the same
+-- results with both interpreters, you've got problems.
+
+test0=(App (Lambda "inc" (Id "inc")) (Lambda "x" (Plus (Id "x") (Num 1))))
+test1=(App (Lambda "inc" (App (Id "inc") (Num 3))) (Lambda "x" (Plus (Id "x") (Num 1))))
+test2=(App (Lambda "n" (App (Lambda "inc" (App (Lambda "n" (App (Id "inc") (Num 3))) (Num 3))) (Lambda "x" (Plus (Id "x") (Id "n"))))) (Num 1))
+
+-- List of tests if you would like to use map for testing
+
+testsDyn = [(evalDynFAE [] test0),(evalDynFAE [] test1),(evalDynFAE [] test2)]
+testsStat = [(evalStatFAE [] test0),(evalStatFAE [] test1),(evalStatFAE [] test2)]
+
+-- Tests for evalFBAE.  These are the same tests as above
+-- using Bind.
+
+test0X= (BindD "inc" (LambdaD "x" (PlusD (IdD "x") (NumD 1))) (IdD "inc"))
+test1X = (BindD "inc" (LambdaD "x" (PlusD (IdD "x") (NumD 1))) (AppD (IdD "inc") (NumD 3)))
+test2X = (BindD "n" (NumD 1) (BindD "inc" (LambdaD "x" (PlusD (IdD "x") (IdD "n"))) (BindD "n" (NumD 3) (AppD (IdD "inc") (NumD 3)))))
+
+-- List of tests if you would like to use map for testing
+
+testsX = [(evalFBAE [] test0X),(evalFBAE [] test1X),(evalFBAE [] test2X)]
+
+
+-- Tests for evalFBAEC.  These are the same tests as above
+-- using the AST for FBAEC.
+
+test0XX= (BindE "inc" (LambdaE "x" (PlusE (IdE "x") (NumE 1))) (IdE "inc"))
+test1XX = (BindE "inc" (LambdaE "x" (PlusE (IdE "x") (NumE 1))) (AppE (IdE "inc") (NumE 3)))
+test2XX = (BindE "n" (NumE 1) (BindE "inc" (LambdaE "x" (PlusE (IdE "x") (IdE "n"))) (BindE "n" (NumE 3) (AppE (IdE "inc") (NumE 3)))))
+
+-- List of tests if you would like to use map for testing
+
+testsXX = [(evalFBAEC [] test0XX),(evalFBAEC [] test1XX),(evalFBAEC [] test2XX)]
+
+
 main :: IO ()
 main = do
     print (evalDynFAE [] (Num 1));
@@ -192,4 +229,9 @@ main = do
     print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (IdE "Hello") (IdE "Hello"))) (NumE 8)));
     print (evalFBAEC [] (AppE (LambdaE "Hello" (PlusE (IdE "Hello") (IdE "Hello"))) (PlusE (NumE 2) (AppE (LambdaE "a" (IdE "a")) (NumE 2)))));
     print (evalFBAEC [("g", (NumV 2))] (IdE "g"));
-    print (evalFBAEC [] (BindE "Hello" (NumE 2) (NumE 3)))
+    print (evalFBAEC [] (BindE "Hello" (NumE 2) (NumE 3)));
+    print (testsDyn);
+    print (testsStat);
+    print (testsX);
+    print (testsXX)
+  
