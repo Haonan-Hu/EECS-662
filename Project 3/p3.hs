@@ -44,7 +44,58 @@ type Env = [(String,FBAEVal)]
 -- Statically scoped eval
          
 evalM :: Env -> FBAE -> (Maybe FBAEVal)
-evalM _ _ = Nothing
+evalM _ (Num n) = return (NumV n)
+evalM e (Plus l r) = do
+                      NumV l' <- evalM e l;
+                      NumV r' <- evalM e r;
+                      return (NumV (l' + r'))
+evalM e (Minus l r) = do
+                        NumV l' <- evalM e l;
+                        NumV r' <- evalM e r;
+                        if (l' < r') then Nothing else return (NumV (l' - r'))
+evalM e (Mult l r) = do
+                      NumV l' <- evalM e l;
+                      NumV r' <- evalM e r;
+                      return (NumV (l' * r'))
+evalM e (Div l r) = do
+                      NumV l' <- evalM e l;
+                      NumV r' <- evalM e r;
+                      if (r' == 0) then Nothing else return (NumV (l' `div` r'))
+evalM e (Bind i v b) = do
+                        v' <- evalM e v;
+                        evalM ((i, v'):e) b
+evalM e (Lambda i _ b) = return (ClosureV i b e)
+evalM e (App f a) = do 
+                     a' <- evalM e a;
+                     (ClosureV i b e') <- evalM e f;
+                     evalM ((i, a'):e') b
+evalM e (Id s) = lookup s e
+evalM _ (Boolean b) = return (BooleanV b)
+evalM e (And l r) = do
+                      BooleanV l' <- evalM e l;
+                      BooleanV r' <- evalM e r;
+                      return (BooleanV (l' && r'))
+evalM e (Or l r) = do
+                    BooleanV l' <- evalM e l;
+                    BooleanV r' <- evalM e r;
+                    return (BooleanV (l' || r'))
+evalM e (Leq l r) = do
+                      (NumV l') <- evalM e l;
+                      (NumV r') <- evalM e r;
+                      if (l' <= r') then return (BooleanV True) else return (BooleanV False)
+evalM e (IsZero n) = do
+                    (NumV n') <- evalM e n;
+                    if (n' == 0) then return (BooleanV True) else return (BooleanV False)
+evalM e' (If c t e) = do
+                      BooleanV c' <- evalM e' c;
+                      if (c' == True) then (evalM e' t) else (evalM e' e)
+evalM e (Fix f) = do
+                    -- (ClosureV g b e') <- evalM e f;
+                    -- evalM e' (subst g (Fix (Lambda g b) b))
+
+
+
+
 
 -- Type inference function
 
