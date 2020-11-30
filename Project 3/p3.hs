@@ -41,6 +41,25 @@ data FBAEVal where
 
 type Env = [(String,FBAEVal)]
 
+-- Substitution Function
+subst :: String -> FBAE -> FBAE -> FBAE
+subst _ _ (Num n) = Num n
+subst i v (Plus l r) = Plus (subst i v l) (subst i v r)
+subst i v (Minus l r) = Minus (subst i v l) (subst i v r)
+subst i v (Mult l r) = Mult (subst i v l) (subst i v r)
+subst i v (Div l r) = Div (subst i v l) (subst i v r)
+subst i v (Bind i' v' b) = if (i == i') then (Bind i' (subst i v v') b) else (Bind i' (subst i v v') (subst i v b))
+subst _ _ (Lambda i t b) = (Lambda i t b)
+subst i v (App f a) = App (subst i v f) (subst i v a)
+subst i v (Id i') = if (i == i') then v else (Id i')
+subst _ _ (Boolean b) = Boolean b
+subst i v (And l r) = And (subst i v l) (subst i v r)
+subst i v (Or l r) = Or (subst i v l) (subst i v r)
+subst i v (Leq l r) = Leq (subst i v l) (subst i v r)
+subst i v (IsZero n) = IsZero (subst i v n)
+subst i v (If c t e) = If (subst i v c) (subst i v t) (subst i v e)
+subst i v (Fix f) = Fix (subst i v f)
+
 -- Statically scoped eval
          
 evalM :: Env -> FBAE -> (Maybe FBAEVal)
@@ -90,11 +109,8 @@ evalM e' (If c t e) = do
                       BooleanV c' <- evalM e' c;
                       if (c' == True) then (evalM e' t) else (evalM e' e)
 evalM e (Fix f) = do
-                    -- (ClosureV g b e') <- evalM e f;
-                    -- evalM e' (subst g (Fix (Lambda g b) b))
-
-
-
+                    (ClosureV g b e') <- evalM e f;
+                    evalM e' (subst g (Fix f) b)
 
 
 -- Type inference function
