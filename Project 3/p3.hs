@@ -43,22 +43,22 @@ type Env = [(String,FBAEVal)]
 
 -- Substitution Function
 subst :: String -> FBAE -> FBAE -> FBAE
-subst _ _ (Num n) = Num n
-subst i v (Plus l r) = Plus (subst i v l) (subst i v r)
-subst i v (Minus l r) = Minus (subst i v l) (subst i v r)
-subst i v (Mult l r) = Mult (subst i v l) (subst i v r)
-subst i v (Div l r) = Div (subst i v l) (subst i v r)
-subst i v (Bind i' v' b) = if (i == i') then (Bind i' (subst i v v') b) else (Bind i' (subst i v v') (subst i v b))
-subst _ _ (Lambda i t b) = (Lambda i t b)
-subst i v (App f a) = App (subst i v f) (subst i v a)
-subst i v (Id i') = if (i == i') then v else (Id i')
-subst _ _ (Boolean b) = Boolean b
-subst i v (And l r) = And (subst i v l) (subst i v r)
-subst i v (Or l r) = Or (subst i v l) (subst i v r)
-subst i v (Leq l r) = Leq (subst i v l) (subst i v r)
-subst i v (IsZero n) = IsZero (subst i v n)
-subst i v (If c t e) = If (subst i v c) (subst i v t) (subst i v e)
-subst i v (Fix f) = Fix (subst i v f)
+subst _ _ (Num n) = (Num n)
+subst i v (Plus l r) = (Plus (subst i v l) (subst i v r))
+subst i v (Minus l r) = (Minus (subst i v l) (subst i v r))
+subst i v (Mult l r) = (Mult (subst i v l) (subst i v r))
+subst i v (Div l r) = (Div (subst i v l) (subst i v r))
+subst i v (Bind i' v' b) = (if (i == i') then (Bind i' (subst i v v') b) else (Bind i' (subst i v v') (subst i v b)))
+subst i v (Lambda i' t b) = (Lambda i' t (subst i v b))
+subst i v (App f a) = (App (subst i v f) (subst i v a))
+subst i v (Id i') = (if (i == i') then v else (Id i'))
+subst _ _ (Boolean b) = (Boolean b)
+subst i v (And l r) = (And (subst i v l) (subst i v r))
+subst i v (Or l r) = (Or (subst i v l) (subst i v r))
+subst i v (Leq l r) = (Leq (subst i v l) (subst i v r))
+subst i v (IsZero n) = (IsZero (subst i v n))
+subst i v (If c t e) = (If (subst i v c) (subst i v t) (subst i v e))
+subst i v (Fix f) = (Fix (subst i v f))
 
 -- Statically scoped eval
          
@@ -110,21 +110,74 @@ evalM e' (If c t e) = do
                       if (c' == True) then (evalM e' t) else (evalM e' e)
 evalM e (Fix f) = do
                     (ClosureV g b e') <- evalM e f;
-                    evalM e' (subst g (Fix f) b)
-
+                    evalM e' (subst g (Fix (Lambda g TNum b)) b)
 
 -- Type inference function
 
 type Cont = [(String,TFBAE)]
 
 typeofM :: Cont -> FBAE -> (Maybe TFBAE)
-typeofM _ _ = Nothing
+typeofM _ (Num _) = return TNum
+typeofM c (Plus l r) = do
+                        TNum  <- typeofM c l;
+                        TNum  <- typeofM c r;
+                        return TNum
+typeofM c (Minus l r) = do 
+                        TNum  <- typeofM c l;
+                        TNum  <- typeofM c r;
+                        return TNum
+typeofM c (Mult l r) = do
+                        TNum  <- typeofM c l;
+                        TNum  <- typeofM c r;
+                        return TNum
+typeofM c (Div l r) = do 
+                        TNum  <- typeofM c l;
+                        TNum  <- typeofM c r;
+                        return TNum
+typeofM c (Bind i v b) = do
+                          tv <- typeofM c v;
+                          typeofM ((i, tv):c) b
+typeofM c (Lambda i t b) = do
+                            b' <- typeofM ((i, t):c) b;
+                            return (t :->: b')
+typeofM c (App f a) = do
+                        (td :->: tr) <- typeofM c f;
+                        ta <- typeofM c a;
+                        if (td == ta) then return tr else Nothing
+
+typeofM c (Id i) = lookup i c
+typeofM _ (Boolean _) = return TBool
+typeofM c (And l r) = do
+                        TBool <- typeofM c l;
+                        TBool <- typeofM c r;
+                        return TBool
+typeofM c (Or l r) = do
+                        TBool <- typeofM c l;
+                        TBool <- typeofM c r;
+                        return TBool
+typeofM c (Leq l r) = do
+                        TBool <- typeofM c l;
+                        TBool <- typeofM c r;
+                        return TBool
+typeofM c (IsZero n) = do
+                        TNum <- typeofM c n;
+                        return TBool
+typeofM c (If c' t e) = do
+                        TBool <- typeofM c c';
+                        t' <- typeofM c t;
+                        e' <- typeofM c e;
+                        if (t' == e') then return t' else Nothing
+typeofM c (Fix f) = do
+                      (d :->: r) <- typeofM c f;
+                      return r
 
 
 -- Interpreter
 
 interp :: FBAE -> (Maybe FBAEVal)
-interp _ = Nothing
+interp exp = do
+            typeofM [] exp;
+            evalM [] exp
 
 -- Factorial function for testing evalM and typeofM.  the type of test1 should
 -- be TNum and the result of evaluating test1`should be (NumV 6).  Remember
